@@ -183,60 +183,83 @@ a.install-link {
   outline: none; 
   box-shadow: 0 0 0 2pt rgb(30, 144, 255, 0.7);
 }
-`;
-import { Providers, QualityFilter, SizeFilter } from './filter.js';
-import { SortOptions } from './sort.js';
-import { LanguageOptions } from './languages.js';
-import { DebridOptions } from '../moch/options.js';
-import { MochOptions } from '../moch/moch.js';
-import { PreConfigurations } from './configuration.js';
+`
+import { Providers, QualityFilter, SizeFilter } from './filter.js'
+import { SortOptions } from './sort.js'
+import { LanguageOptions } from './languages.js'
+import { DebridOptions } from '../moch/options.js'
+import { MochOptions } from '../moch/moch.js'
+import { PreConfigurations } from './configuration.js'
 
 export default function landingTemplate(manifest, config = {}) {
-  const providers = config[Providers.key] || Providers.options.map(provider => provider.key);
-  const sort = config[SortOptions.key] || SortOptions.options.qualitySeeders.key;
-  const languages = config[LanguageOptions.key] || [];
-  const qualityFilters = config[QualityFilter.key] || [];
-  const sizeFilter = (config[SizeFilter.key] || []).join(',');
-  const limit = config.limit || '';
+	const providers =
+		config[Providers.key] || Providers.options.map(provider => provider.key)
+	const sort =
+		config[SortOptions.key] || SortOptions.options.qualitySeeders.key
+	const languages = config[LanguageOptions.key] || []
+	const qualityFilters = config[QualityFilter.key] || []
+	const sizeFilter = (config[SizeFilter.key] || []).join(',')
+	const limit = config.limit || ''
 
-  const debridProvider = Object.keys(MochOptions).find(mochKey => config[mochKey]);
-  const debridOptions = config[DebridOptions.key] || [];
-  const realDebridApiKey = config[MochOptions.realdebrid.key] || '';
-  const premiumizeApiKey = config[MochOptions.premiumize.key] || '';
-  const allDebridApiKey = config[MochOptions.alldebrid.key] || '';
-  const debridLinkApiKey = config[MochOptions.debridlink.key] || '';
-  const offcloudApiKey = config[MochOptions.offcloud.key] || '';
-  const putioKey = config[MochOptions.putio.key] || '';
-  const putioClientId = putioKey.replace(/@.*/, '');
-  const putioToken = putioKey.replace(/.*@/, '');
+	const debridProvider = Object.keys(MochOptions).find(
+		mochKey => config[mochKey]
+	)
+	const debridOptions = config[DebridOptions.key] || []
+	const realDebridApiKey = config[MochOptions.realdebrid.key] || ''
+	const premiumizeApiKey = config[MochOptions.premiumize.key] || ''
+	const allDebridApiKey = config[MochOptions.alldebrid.key] || ''
+	const debridLinkApiKey = config[MochOptions.debridlink.key] || ''
+	const offcloudApiKey = config[MochOptions.offcloud.key] || ''
+	const torBoxApiKey = config[MochOptions.torbox.key] || ''
+	const putioKey = config[MochOptions.putio.key] || ''
+	const putioClientId = putioKey.replace(/@.*/, '')
+	const putioToken = putioKey.replace(/.*@/, '')
 
-  const background = manifest.background || 'https://dl.strem.io/addon-background.jpg';
-  const logo = manifest.logo || 'https://dl.strem.io/addon-logo.png';
-  const providersHTML = Providers.options
-      .map(provider => `<option value="${provider.key}">${provider.foreign ? provider.foreign + ' ' : ''}${provider.label}</option>`)
-      .join('\n');
-  const sortOptionsHTML = Object.values(SortOptions.options)
-      .map((option, i) => `<option value="${option.key}" ${i === 0 ? 'selected' : ''}>${option.description}</option>`)
-      .join('\n');
-  const languagesOptionsHTML = LanguageOptions.options
-      .map((option, i) => `<option value="${option.key}">${option.label}</option>`)
-      .join('\n');
-  const qualityFiltersHTML = Object.values(QualityFilter.options)
-      .map(option => `<option value="${option.key}">${option.label}</option>`)
-      .join('\n');
-  const debridProvidersHTML = Object.values(MochOptions)
-      .map(moch => `<option value="${moch.key}">${moch.name}</option>`)
-      .join('\n');
-  const debridOptionsHTML = Object.values(DebridOptions.options)
-      .map(option => `<option value="${option.key}">${option.description}</option>`)
-      .join('\n');
-  const stylizedTypes = manifest.types
-      .map(t => t[0].toUpperCase() + t.slice(1) + (t !== 'series' ? 's' : ''));
-  const preConfigurationObject = Object.entries(PreConfigurations)
-      .map(([key, config]) => `${key}: '${config.serialized}'`)
-      .join(',');
+	const background =
+		manifest.background || 'https://dl.strem.io/addon-background.jpg'
+	const logo = manifest.logo || 'https://dl.strem.io/addon-logo.png'
+	const providersHTML = Providers.options
+		.map(
+			provider =>
+				`<option value="${provider.key}">${
+					provider.foreign ? provider.foreign + ' ' : ''
+				}${provider.label}</option>`
+		)
+		.join('\n')
+	const sortOptionsHTML = Object.values(SortOptions.options)
+		.map(
+			(option, i) =>
+				`<option value="${option.key}" ${i === 0 ? 'selected' : ''}>${
+					option.description
+				}</option>`
+		)
+		.join('\n')
+	const languagesOptionsHTML = LanguageOptions.options
+		.map(
+			(option, i) =>
+				`<option value="${option.key}">${option.label}</option>`
+		)
+		.join('\n')
+	const qualityFiltersHTML = Object.values(QualityFilter.options)
+		.map(option => `<option value="${option.key}">${option.label}</option>`)
+		.join('\n')
+	const debridProvidersHTML = Object.values(MochOptions)
+		.map(moch => `<option value="${moch.key}">${moch.name}</option>`)
+		.join('\n')
+	const debridOptionsHTML = Object.values(DebridOptions.options)
+		.map(
+			option =>
+				`<option value="${option.key}">${option.description}</option>`
+		)
+		.join('\n')
+	const stylizedTypes = manifest.types.map(
+		t => t[0].toUpperCase() + t.slice(1) + (t !== 'series' ? 's' : '')
+	)
+	const preConfigurationObject = Object.entries(PreConfigurations)
+		.map(([key, config]) => `${key}: '${config.serialized}'`)
+		.join(',')
 
-  return `
+	return `
    <!DOCTYPE html>
    <html style="background-image: url(${background});">
 
@@ -254,7 +277,7 @@ export default function landingTemplate(manifest, config = {}) {
       <style>${STYLESHEET}</style>
    </head>
 
-	<body>
+   <body>
       <div id="addon">
          <div class="logo">
             <img src="${logo}">
@@ -335,6 +358,11 @@ export default function landingTemplate(manifest, config = {}) {
            <input type="text" id="iPutioClientId" placeholder="ClientId" onchange="generateInstallLink()" class="input">
            <input type="text" id="iPutioToken" placeholder="Token" onchange="generateInstallLink()" class="input">
          </div>
+
+         <div id="dTorBox">
+           <label class="label" for="iTorBox">Torbox api key:</label>
+           <input type="text" id="iTorBox"  onchange="generateInstallLink()" class="input">
+         </div>
          
          <div id="dDebridOptions">
            <label class="label" for="iDebridOptions">Debrid options:</label>
@@ -365,30 +393,46 @@ export default function landingTemplate(manifest, config = {}) {
                     buttonTextAlignment: 'left',
                     onChange: () => generateInstallLink()
                 });
-                $('#iProviders').multiselect('select', [${providers.map(provider => '"' + provider + '"')}]);
+                $('#iProviders').multiselect('select', [${providers.map(
+					provider => '"' + provider + '"'
+				)}]);
                 $('#iLanguages').multiselect({ 
                     nonSelectedText: 'None',
                     buttonTextAlignment: 'left',
                     onChange: () => generateInstallLink()
                 });
-                $('#iLanguages').multiselect('select', [${languages.map(language => '"' + language + '"')}]);
+                $('#iLanguages').multiselect('select', [${languages.map(
+					language => '"' + language + '"'
+				)}]);
                 $('#iQualityFilter').multiselect({ 
                     nonSelectedText: 'None',
                     buttonTextAlignment: 'left',
                     onChange: () => generateInstallLink()
                 });
-                $('#iQualityFilter').multiselect('select', [${qualityFilters.map(filter => '"' + filter + '"')}]);
+                $('#iQualityFilter').multiselect('select', [${qualityFilters.map(
+					filter => '"' + filter + '"'
+				)}]);
                 $('#iDebridOptions').multiselect({ 
                     nonSelectedText: 'None',
                     buttonTextAlignment: 'left',
                     onChange: () => generateInstallLink()
                 });
-                $('#iDebridOptions').multiselect('select', [${debridOptions.map(option => '"' + option + '"')}]);
+                $('#iDebridOptions').multiselect('select', [${debridOptions.map(
+					option => '"' + option + '"'
+				)}]);
               } else {
-                $('#iProviders').val([${providers.map(provider => '"' + provider + '"')}]);
-                $('#iLanguages').val([${languages.map(language => '"' + language + '"')}]);
-                $('#iQualityFilter').val([${qualityFilters.map(filter => '"' + filter + '"')}]);
-                $('#iDebridOptions').val([${debridOptions.map(option => '"' + option + '"')}]);
+                $('#iProviders').val([${providers.map(
+					provider => '"' + provider + '"'
+				)}]);
+                $('#iLanguages').val([${languages.map(
+					language => '"' + language + '"'
+				)}]);
+                $('#iQualityFilter').val([${qualityFilters.map(
+					filter => '"' + filter + '"'
+				)}]);
+                $('#iDebridOptions').val([${debridOptions.map(
+					option => '"' + option + '"'
+				)}]);
               }
               $('#iDebridProviders').val("${debridProvider || 'none'}");
               $('#iRealDebrid').val("${realDebridApiKey}");
@@ -396,6 +440,7 @@ export default function landingTemplate(manifest, config = {}) {
               $('#iAllDebrid').val("${allDebridApiKey}");
               $('#iDebridLink').val("${debridLinkApiKey}");
               $('#iOffcloud').val("${offcloudApiKey}");
+               $('#iTorBox').val("${torBoxApiKey}");
               $('#iPutioClientId').val("${putioClientId}");
               $('#iPutioToken').val("${putioToken}");
               $('#iSort').val("${sort}");
@@ -406,7 +451,9 @@ export default function landingTemplate(manifest, config = {}) {
           });
           
           function sortModeChange() {
-            if (['${SortOptions.options.seeders.key}', '${SortOptions.options.size.key}'].includes($('#iSort').val())) {
+            if (['${SortOptions.options.seeders.key}', '${
+		SortOptions.options.size.key
+	}'].includes($('#iSort').val())) {
               $("#iLimitLabel").text("Max results:");
             } else {
               $("#iLimitLabel").text("Max results per quality:");
@@ -417,12 +464,21 @@ export default function landingTemplate(manifest, config = {}) {
           function debridProvidersChange() {
             const provider = $('#iDebridProviders').val()
             $('#dDebridOptions').toggle(provider !== 'none');
-            $('#dRealDebrid').toggle(provider === '${MochOptions.realdebrid.key}');
-            $('#dPremiumize').toggle(provider === '${MochOptions.premiumize.key}');
-            $('#dAllDebrid').toggle(provider === '${MochOptions.alldebrid.key}');
-            $('#dDebridLink').toggle(provider === '${MochOptions.debridlink.key}');
+            $('#dRealDebrid').toggle(provider === '${
+				MochOptions.realdebrid.key
+			}');
+            $('#dPremiumize').toggle(provider === '${
+				MochOptions.premiumize.key
+			}');
+            $('#dAllDebrid').toggle(provider === '${
+				MochOptions.alldebrid.key
+			}');
+            $('#dDebridLink').toggle(provider === '${
+				MochOptions.debridlink.key
+			}');
             $('#dOffcloud').toggle(provider === '${MochOptions.offcloud.key}');
             $('#dPutio').toggle(provider === '${MochOptions.putio.key}');
+            $('#dTorBox').toggle(provider === '${MochOptions.torbox.key}');
           }
           
           function generateInstallLink() {
@@ -440,13 +496,18 @@ export default function landingTemplate(manifest, config = {}) {
               const debridLinkValue = $('#iDebridLink').val() || ''
               const premiumizeValue = $('#iPremiumize').val() || '';
               const offcloudValue = $('#iOffcloud').val() || ''
+              const torBoxValue = $('#iTorBox').val() || '';
               const putioClientIdValue = $('#iPutioClientId').val() || '';
               const putioTokenValue = $('#iPutioToken').val() || '';
               
               
-              const providers = providersList.length && providersList.length < ${Providers.options.length} && providersValue;
+              const providers = providersList.length && providersList.length < ${
+					Providers.options.length
+				} && providersValue;
               const qualityFilters = qualityFilterValue.length && qualityFilterValue;
-              const sort = sortValue !== '${SortOptions.options.qualitySeeders.key}' && sortValue;
+              const sort = sortValue !== '${
+					SortOptions.options.qualitySeeders.key
+				}' && sortValue;
               const languages = languagesValue.length && languagesValue;
               const limit = /^[1-9][0-9]{0,2}$/.test(limitValue) && limitValue;
               const sizeFilter = sizeFilterValue.length && sizeFilterValue;
@@ -456,13 +517,14 @@ export default function landingTemplate(manifest, config = {}) {
               const premiumize = premiumizeValue.length && premiumizeValue.trim();
               const allDebrid = allDebridValue.length && allDebridValue.trim();
               const debridLink = debridLinkValue.length && debridLinkValue.trim();
+              const torBox = torBoxValue.length && torBoxValue.trim();
               const offcloud = offcloudValue.length && offcloudValue.trim();
               const putio = putioClientIdValue.length && putioTokenValue.length && putioClientIdValue.trim() + '@' + putioTokenValue.trim();
 
               const preConfigurations = { 
                 ${preConfigurationObject}
               };
-              let configurationValue = [
+              let configurationValueTest = [
                     ['${Providers.key}', providers],
                     ['${SortOptions.key}', sort],
                     ['${LanguageOptions.key}', languages],
@@ -475,8 +537,11 @@ export default function landingTemplate(manifest, config = {}) {
                     ['${MochOptions.alldebrid.key}', allDebrid],
                     ['${MochOptions.debridlink.key}', debridLink],
                     ['${MochOptions.offcloud.key}', offcloud],
+                    ['${MochOptions.torbox.key}', torBox],
                     ['${MochOptions.putio.key}', putio]
-                  ].filter(([_, value]) => value.length).map(([key, value]) => key + '=' + value).join('|');
+                  ]
+                    console.log(configurationValueTest)
+                    let configurationValue = configurationValueTest.filter(([_, value]) => value.length).map(([key, value]) => key + '=' + value).join('|');
               configurationValue = Object.entries(preConfigurations)
                   .filter(([key, value]) => value === configurationValue)
                   .map(([key, value]) => key)[0] || configurationValue;
@@ -489,7 +554,7 @@ export default function landingTemplate(manifest, config = {}) {
              navigator.clipboard.writeText(installLink.href.replace('stremio://', 'https://'));
           });
       </script>
-	</body>
+   </body>
 
-	</html>`
+   </html>`
 }

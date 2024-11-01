@@ -6,6 +6,7 @@ import * as alldebrid from './alldebrid.js';
 import * as debridlink from './debridlink.js';
 import * as offcloud from './offcloud.js';
 import * as putio from './putio.js';
+import * as torbox from './torbox.js';
 import StaticResponse, { isStaticUrl } from './static.js';
 import { cacheWrapResolvedUrl } from '../lib/cache.js';
 import { timeout } from '../lib/promises.js';
@@ -56,6 +57,13 @@ export const MochOptions = {
     instance: putio,
     name: 'Put.io',
     shortName: 'Putio',
+    catalog: true
+  },
+  torbox: {
+    key: 'torbox',
+    instance: torbox,
+    name: 'Torbox',
+    shortName: 'Torbox',
     catalog: true
   }
 };
