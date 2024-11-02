@@ -5,6 +5,7 @@ import { getTorrent } from './repository.js';
 import { Type } from './types.js';
 import { extractProvider } from "./titleHelper.js";
 import { Providers } from "./filter.js";
+import { getTorrentDetails } from './cache.js';
 
 const TRACKERS_URL = 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt';
 const ANIME_TRACKERS = [
@@ -37,14 +38,13 @@ let BEST_TRACKERS = [];
 let ALL_ANIME_TRACKERS = [];
 let ALL_RUSSIAN_TRACKERS = [];
 
+// modified to use trackers from torrentio endpoint
 export async function getMagnetLink(infoHash) {
-  const torrent = await getTorrent(infoHash).catch(() => ({ infoHash }));
-  const torrentTrackers = torrent?.trackers?.split(',') || [];
-  const animeTrackers = torrent?.type === Type.ANIME ? ALL_ANIME_TRACKERS : [];
-  const providerTrackers = RUSSIAN_PROVIDERS.includes(torrent?.provider) && ALL_RUSSIAN_TRACKERS || [];
-  const trackers = unique([].concat(torrentTrackers).concat(animeTrackers).concat(providerTrackers));
-
-  return magnet.encode({ infoHash: infoHash, name: torrent?.title, announce: trackers });
+  const torentFormCache = await getTorrentDetails(infoHash).catch(() => ({ infoHash }));
+  const sources = torentFormCache?.sources
+  const trackers = unique([].concat(BEST_TRACKERS).concat(sources || []));
+  const title = torentFormCache?.title?.split("\n")[0];
+  return magnet.encode({ infoHash: infoHash, name: title, announce: trackers });
 }
 
 export async function initBestTrackers() {

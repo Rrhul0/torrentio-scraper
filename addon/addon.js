@@ -64,18 +64,25 @@ builder.defineMetaHandler((args) => {
 })
 
 async function resolveStreams(args) {
-  return cacheWrapStream(args.id, () => newLimiter(() => streamHandler(args)
-      .then(records => records
-          .sort((a, b) => b.torrent.seeders - a.torrent.seeders || b.torrent.uploadDate - a.torrent.uploadDate)
-          .map(record => toStreamInfo(record)))));
+  return cacheWrapStream(args.id, () => newLimiter(() => streamHandler(args)))
+    //   .then(records => {
+    //     // console.log(records)
+    //     return records
+    //       .sort((a, b) => b.torrent.seeders - a.torrent.seeders || b.torrent.uploadDate - a.torrent.uploadDate)
+    //       .map(record => toStreamInfo(record))
+    //     }
+    // )));
 }
 
 async function streamHandler(args) {
-  // console.log(`Pending count: ${newLimiter.pendingCount}, active count: ${newLimiter.activeCount}`, )
+  const torrentioEndpoint = process.env.TORRENTIO_ENDPOINT || 'https://torrentio.strem.fun/stream';
   if (args.type === Type.MOVIE) {
-    return movieRecordsHandler(args);
+    const res = await fetch(`${torrentioEndpoint}/movie/${args.id}.json`).then(res => res.json())
+    return res?.streams
+    // return movieRecordsHandler(args);
   } else if (args.type === Type.SERIES) {
-    return seriesRecordsHandler(args);
+      return (await fetch(`${torrentioEndpoint}/series/${args.id}.json`).then(res => res.json()))?.streams
+    // return seriesRecordsHandler(args);
   }
   return Promise.reject('not supported type');
 }

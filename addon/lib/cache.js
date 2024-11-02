@@ -63,12 +63,21 @@ function cacheWrap(cache, key, method, options) {
 }
 
 export function cacheWrapStream(id, method) {
-  return cacheWrap(remoteCache, `${STREAM_KEY_PREFIX}:${id}`, method, {
+    const newMethod = async () => {
+        const result = await method();
+        result.map(stream => remoteCache.set(`${STREAM_KEY_PREFIX}:${stream.infoHash}`,stream, { ttl: STREAM_TTL }));
+        if (result) {
+            return result;
+        }
+        return null;
+    }
+  return cacheWrap(remoteCache, `${STREAM_KEY_PREFIX}:${id}`, newMethod, {
     ttl: (streams) => streams.length ? STREAM_TTL : STREAM_EMPTY_TTL
   });
 }
 
 export function cacheWrapResolvedUrl(id, method) {
+    
   return cacheWrap(remoteCache, `${RESOLVED_URL_KEY_PREFIX}:${id}`, method, {
     ttl: (url) => isStaticUrl(url) ? MESSAGE_VIDEO_URL_TTL : RESOLVED_URL_TTL
   });
@@ -101,5 +110,17 @@ export function getCachedAvailabilityResults(infoHashes) {
       });
       resolve(availabilityResults);
     })
+  });
+}
+
+export async function getTorrentDetails(infoHash) {
+  return new Promise(resolve => {
+    remoteCache.get(`${STREAM_KEY_PREFIX}:${infoHash}`, (error, result) => {
+      if (error) {
+        console.log('Failed retrieve stream cache', error)
+        return resolve(null);
+      }
+      resolve(result);
+    });
   });
 }

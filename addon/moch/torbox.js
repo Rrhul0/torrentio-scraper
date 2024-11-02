@@ -250,6 +250,8 @@ async function _createTorrent(apiKey, infoHash) {
   const magnetLink = await getMagnetLink(infoHash);
   const data = new URLSearchParams();
   data.append('magnet', magnetLink);
+  data.append('seed',3);
+  data.append('allow_zip',false)
   const endpoint = `${API_BASE_TORRENT}/createtorrent`;
   const createTorrent = fetch(endpoint, {
     headers: {
@@ -259,7 +261,6 @@ async function _createTorrent(apiKey, infoHash) {
     method: 'post',
     body: data
   });
-  // return createTorrent.then(() => _findTorrent(apiKey, infoHash));
   return createTorrent.then((response) => response.json());
 }
 
