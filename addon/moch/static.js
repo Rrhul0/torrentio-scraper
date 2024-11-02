@@ -1,5 +1,6 @@
 const staticVideoUrls = {
   DOWNLOADING: `videos/downloading_v2.mp4`,
+  QUEUED: `videos/download_queued.mp4`,
   FAILED_DOWNLOAD: `videos/download_failed_v2.mp4`,
   FAILED_ACCESS: `videos/failed_access_v2.mp4`,
   FAILED_RAR: `videos/failed_rar_v2.mp4`,

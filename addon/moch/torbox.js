@@ -1,26 +1,20 @@
-// import { isVideo } from '../lib/extension.js'
-import { delay } from '../lib/promises.js';
 import StaticResponse from './static.js';
 import { getMagnetLink } from '../lib/magnetHelper.js';
 import { Type } from '../lib/types.js';
-import { decode } from 'magnet-uri';
-// import { sameFilename, streamFilename } from './mochHelper.js'
 
 import PremiumizeClient from 'premiumize-api';
 import magnet from 'magnet-uri';
-// import { Type } from '../lib/types.js'
-import { isVideo, isArchive } from '../lib/extension.js';
-// import StaticResponse from './static.js'
+import { isVideo } from '../lib/extension.js';
 import {
   BadTokenError,
   chunkArray,
-  sameFilename,
   streamFilename
 } from './mochHelper.js';
 
 const KEY = 'torbox';
 const API_BASE = 'https://api.torbox.app';
 const API_VERSION = 'v1';
+const API_BASE_TORRENT = `${API_BASE}/${API_VERSION}/api/torrents`;
 
 export async function getCachedStreams(streams, apiKey) {
   return Promise.all(
@@ -35,8 +29,7 @@ export async function getCachedStreams(streams, apiKey) {
 }
 
 async function _getCachedStreams(apiKey, streams) {
-  //   console.log(streams);
-  const apiUrl = `${API_BASE}/${API_VERSION}/api/torrents/checkcached?hash={{torrent_hash}}&format=list&list_files=true`;
+  const apiUrl = `${API_BASE_TORRENT}/checkcached?hash={{torrent_hash}}&format=list&list_files=true`;
   const hashes = streams.map((stream) => stream.infoHash).join(',');
   const uri = apiUrl.replace('{{torrent_hash}}', hashes);
   return fetch(uri, {
@@ -143,7 +136,8 @@ async function getFolderContents(PM, itemId, ip, folderPrefix = '') {
 export async function resolve({ apiKey, infoHash, cachedEntryInfo }) {
   return _getCachedLink(apiKey, infoHash, cachedEntryInfo)
     .catch((error) => {
-      //   console.log('resolve first promise error: ', error);
+      console.log('error getting cached (first step)',error)
+      // could not find torrent in cache
       return _resolve(apiKey, infoHash, cachedEntryInfo);
     })
     .catch((error) => {
@@ -158,25 +152,31 @@ export async function resolve({ apiKey, infoHash, cachedEntryInfo }) {
 }
 
 async function _resolve(apiKey, infoHash, cachedEntryInfo) {
-  const torrent = await _createOrFindTorrent(apiKey, infoHash);
-  //   console.log('_resolve', torrent);
-  if (torrent && statusReady(torrent)) {
+  // no check were found have to add and download the torrent
+  // const torrent = await _createOrFindTorrent(apiKey, infoHash);
+  const torrent = await _createTorrent(apiKey, infoHash);
+  console.log(torrent)
+  if (torrent && statusCachedFromAdding(torrent?.detail)) {
+    // mostly will never go here
     return _getCachedLink(apiKey, infoHash, cachedEntryInfo);
-  } else if (torrent && statusDownloading(torrent)) {
-    console.log(`Downloading to your Torbox ${infoHash}...`);
+  } else if (torrent && statusDownloadingFromAdding(torrent?.detail)) {
+    // console.log(`Downloading to your Torbox ${infoHash}...`);
     return StaticResponse.DOWNLOADING;
-  } else if (torrent && statusError(torrent.status)) {
-    console.log(`Retrying downloading to your Torbox ${infoHash}...`);
-    return _retryCreateTorrent(apiKey, infoHash, cachedEntryInfo, fileIndex);
-  }
+  } else if (torrent && statusQueuedFromAdding(torrent?.detail)) {
+    console.log(`Queued to your Torbox ${infoHash}...`);
+    return StaticResponse.QUEUED;
+  } 
+  // else if (torrent && statusError(torrent.status)) {
+  //   console.log(`Retrying downloading to your Torbox ${infoHash}...`);
+  //   return _retryCreateTorrent(apiKey, infoHash, cachedEntryInfo, fileIndex);
+  // }
   return Promise.reject(
     `Failed Torbox adding torrent ${JSON.stringify(torrent)}`
   );
 }
 
 async function _getCachedLink(apiKey, infoHash, encodedFileName) {
-  //   console.log('getting cached link for torrent: ', infoHash, encodedFileName);
-  const apiUrl = `${API_BASE}/${API_VERSION}/api/torrents/checkcached?hash=${infoHash}&format=list&list_files=true`;
+  const apiUrl = `${API_BASE_TORRENT}/checkcached?hash=${infoHash}&format=list&list_files=true`;
   const resJson = await fetch(apiUrl, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -191,33 +191,27 @@ async function _getCachedLink(apiKey, infoHash, encodedFileName) {
       console.warn('Failed Torbox cached torrent availability request:', error);
       return undefined;
     });
-  //   console.log('resJson: ', resJson);
   if (!resJson?.data) return Promise.reject('No cached entry found');
+
   const torrent = await _createOrFindTorrent(apiKey, infoHash);
-  //   console.log(torrent);
-  //   console.log('torrent: ', torrent, torrent?.files);
-  //   console.log('filename: ', encodedFileName, torrent.files.length);
   const fileId = torrent.files.find(
     (file) => file.short_name === encodedFileName
   )?.id;
 
-  const getDownloadLinkApi = `${API_BASE}/${API_VERSION}/api/torrents/requestdl?token=${apiKey}&torrent_id=${torrent.id}&file_id=${fileId}&zip_link=false`;
+  const getDownloadLinkApi = `${API_BASE_TORRENT}/requestdl?token=${apiKey}&torrent_id=${torrent.id}&file_id=${fileId}&zip_link=false`;
   const linkRes = await fetch(getDownloadLinkApi).then((res) => res.json());
-  //   console.log(linkRes?.data);
   return linkRes?.data;
 }
 
 async function _createOrFindTorrent(apiKey, infoHash) {
   const returnData = await _findTorrent(apiKey, infoHash).catch(() => {
-    // console.log('could not find the torrent in your torbox, adding one');
-    return _createTorrent(apiKey, infoHash);
+    return _createThenFind(apiKey, infoHash);
   });
-  //   console.log('create or find ', returnData?.files?.length);
   return returnData;
 }
 
 async function _findTorrent(apiKey, infoHash) {
-  const endpoint = `${API_BASE}/${API_VERSION}/api/torrents/mylist?bypass_cache=true`;
+  const endpoint = `${API_BASE_TORRENT}/mylist?bypass_cache=true`;
   const torrents = await fetch(endpoint, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -226,12 +220,9 @@ async function _findTorrent(apiKey, infoHash) {
   })
     .then((response) => response.json())
     .catch((error) => console.log(error));
-  //   console.log('finding torrent in my list');
-  //   console.log('find torrents: (my list) ', torrents);
   const foundTorrents = torrents?.data.filter(
     (torrent) => torrent.hash === infoHash
   );
-  //   console.log('found torrent: ', foundTorrents.length);
   const nonFailedTorrent = foundTorrents.find(
     (torrent) => !statusError(torrent.statusCode)
   );
@@ -253,11 +244,10 @@ async function _findInfoHash(PM, itemId) {
 }
 
 async function _createTorrent(apiKey, infoHash) {
-  //   console.log('creating torrent with infohash:', infoHash);
   const magnetLink = await getMagnetLink(infoHash);
   const data = new URLSearchParams();
   data.append('magnet', magnetLink);
-  const endpoint = `${API_BASE}/${API_VERSION}/api/torrents/createtorrent`;
+  const endpoint = `${API_BASE_TORRENT}/createtorrent`;
   const createTorrent = fetch(endpoint, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -266,22 +256,14 @@ async function _createTorrent(apiKey, infoHash) {
     method: 'post',
     body: data
   });
-  return createTorrent.then(() => _findTorrent(apiKey, infoHash));
+  // return createTorrent.then(() => _findTorrent(apiKey, infoHash));
+  return createTorrent.then((response) => response.json());
 }
 
-async function _retryCreateTorrent(
-  apiKey,
-  infoHash,
-  encodedFileName,
-  fileIndex
-) {
-  const newTorrent = await _createTorrent(apiKey, infoHash).then(() =>
-    _findTorrent(apiKey, infoHash)
-  );
-  return newTorrent && statusReady(newTorrent.status)
-    ? _getCachedLink(apiKey, infoHash, encodedFileName, fileIndex)
-    : StaticResponse.FAILED_DOWNLOAD;
+async function _createThenFind(apiKey,infoHash){
+  return _createTorrent(apiKey,infoHash).then(()=>_findTorrent(apiKey,infoHash));
 }
+
 
 export function toCommonError(error) {
   if (error && error.message === 'Not logged in.') {
@@ -302,6 +284,22 @@ function statusReady(torrent) {
   return torrent?.download_finished;
 }
 
+function statusQueued(torrent){
+  return !!torrent?.queued_id;
+}
+
 async function getDefaultOptions(ip) {
   return { timeout: 5000 };
+}
+
+function statusDownloadingFromAdding(detail=''){
+  return detail.match(/Added/i);
+}
+
+function statusQueuedFromAdding(detail=''){
+  return detail.match(/queued/i);
+}
+
+function statusCachedFromAdding(detail=''){
+  return detail.match(/Cached/i);
 }
