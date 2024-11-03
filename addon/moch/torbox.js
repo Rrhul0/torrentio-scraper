@@ -160,12 +160,15 @@ async function _resolve(apiKey, infoHash, cachedEntryInfo) {
     // mostly will never go here
     return _getCachedLink(apiKey, infoHash, cachedEntryInfo);
   } else if (torrent && statusDownloadingFromAdding(torrent?.detail)) {
-    // console.log(`Downloading to your Torbox ${infoHash}...`);
+    console.log(`Downloading to your Torbox ${infoHash}...`);
     return StaticResponse.DOWNLOADING;
   } else if (torrent && statusQueuedFromAdding(torrent?.detail)) {
     console.log(`Queued to your Torbox ${infoHash}...`);
     return StaticResponse.QUEUED;
-  } 
+  } else if (torrent && statusCooldownFromAdding(torrent?.detail)) {
+    console.log(`Torbox have cooldown ${infoHash}...`)
+    return StaticResponse.COOLDOWN_LIMIT
+  }
   // else if (torrent && statusError(torrent.status)) {
   //   console.log(`Retrying downloading to your Torbox ${infoHash}...`);
   //   return _retryCreateTorrent(apiKey, infoHash, cachedEntryInfo, fileIndex);
@@ -276,18 +279,6 @@ function statusError(status) {
   return ['deleted', 'error', 'timeout'].includes(status);
 }
 
-function statusDownloading(torrent) {
-  return !torrent?.download_finished;
-}
-
-function statusReady(torrent) {
-  return torrent?.download_finished;
-}
-
-function statusQueued(torrent){
-  return !!torrent?.queued_id;
-}
-
 async function getDefaultOptions(ip) {
   return { timeout: 5000 };
 }
@@ -302,4 +293,8 @@ function statusQueuedFromAdding(detail=''){
 
 function statusCachedFromAdding(detail=''){
   return detail.match(/Cached/i);
+}
+
+function statusCooldownFromAdding(detail = '') {
+  return detail.match(/cooldown/i)
 }
